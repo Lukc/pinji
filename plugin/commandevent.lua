@@ -38,6 +38,9 @@ return function (bot)
 		local command, hasparam, param
 		if event.room then
 			local nick
+
+			bot:event("muc-message", event)
+
 			nick, command, hasparam, param = body:match(room_command_pattern)
 			if nick ~= event.room.nick then
 				return

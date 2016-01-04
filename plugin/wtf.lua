@@ -8,7 +8,7 @@
 --
 
 local ht = require "hextime"
-
+local rex = require "rex_posix"
 local serpent = require "serpent"
 
 local DB = {}
@@ -32,6 +32,44 @@ local function randomElement(t)
 	return t[math.random(1, #t)]
 end
 
+local patterns = {}
+
+local function register(bot, pattern, callback)
+	patterns[#patterns+1] = {
+		bot = bot,
+		pattern = pattern,
+		callback = callback
+	}
+end
+
+local function parseSentence(str)
+	local s = {
+		separators = {}
+	}
+
+	--for match in rex.gmatch(str, "([?!,.]+|[^%s ]+)") do
+	for match in rex.gmatch(str, "([?!,.…«»“”\"']+|[^   \t\n?!,.…«»“”\"']+)") do
+		if match:match("^[?!.]+$") then
+			s.separators[#s] = match
+
+			return s, parseSentence(str:gsub(".*" .. match, ""))
+		elseif match:match("[,…«»“”\"']") then
+			s.separators[#s] = match
+		else
+			s[#s+1] = match
+		end
+	end
+
+	return s
+end
+
+--[[
+local a, b = parseSentence("Hey, salut pinji ! Comment va ?")
+
+for k,v in ipairs(a) do print(k,v) end
+for k,v in ipairs(b) do print(k,v) end
+--]]
+
 local function answer(word)
 	if DB[word] then
 		return word .. " est " .. tostring(DB[word])
@@ -41,7 +79,25 @@ local function answer(word)
 end
 
 return function (bot)
+	register(bot, "@tais toi$", function(event)
+		print("It works!!!")
+
+		return true
+	end)
+
+	register(bot, "on t'aime @", function(event)
+		print("It works!!!")
+
+		return true
+	end)
+
 	bot:hook("muc-message", function(event)
+		local sentences = table.pack(parseSentence(event.body))
+
+		for _, sentence in ipairs(sentences) do
+			
+		end
+
 		local question = event.body:match("^«%s*%Z*%s*» ?")
 
 		if not question then
@@ -125,6 +181,12 @@ return function (bot)
 		end
 
 		save()
+
+		return true
+	end)
+
+	bot:hook("command/date", function(event)
+		bot:send_message(event.room.jid, "groupchat", ht.timeToTartines(os.time()))
 
 		return true
 	end)

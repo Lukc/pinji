@@ -10,6 +10,7 @@
 local ht = require "hextime"
 local rex = require "rex_posix"
 local serpent = require "serpent"
+local utf8 = require "lua-utf8"
 
 local DB = {}
 
@@ -98,15 +99,19 @@ return function (bot)
 			
 		end
 
-		local question = event.body:match("^«%s*%Z*%s*» ?")
+		local question = utf8.match(event.body, "^«%s*%Z*%s*» ?")
 
 		if not question then
-			question = event.body:match("^[\"“]%Z*[\"”][%s ]*?")
+			question = utf8.match(event.body, "^[\"“]%Z*[\"”][%s ]*?")
 		end
 
 		if question then
-			question = question:gsub("^[«“\"][%s ]*", "")
-			question = question:gsub("[%s ]*[»”\"].*", "")
+			question = utf8.gsub(question, "^[«“\"][%s ]*", "")
+			question = utf8.gsub(question, "[%s ]*[»”\"].*", "")
+
+			question = utf8.gsub(question, "�", "")
+
+			print("[" .. question .. "]")
 
 			bot:send_message(event.room_jid, "groupchat", answer(question))
 			--bot:send_message(question)
